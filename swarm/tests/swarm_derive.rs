@@ -33,6 +33,8 @@ use libp2p_swarm::{
 #[allow(dead_code)]
 fn require_net_behaviour<T: libp2p_swarm::NetworkBehaviour>() {}
 
+fn require_event<T: NetworkBehaviour<ToSwarm = E>, E>() {}
+
 // TODO: doesn't compile
 // #[test]
 // fn empty() {
@@ -150,10 +152,7 @@ fn custom_event() {
         }
     }
 
-    #[allow(dead_code)]
-    fn foo() {
-        require_net_behaviour::<Foo>();
-    }
+    require_event::<Foo, MyEvent>();
 }
 
 #[test]
@@ -184,10 +183,7 @@ fn custom_event_mismatching_field_names() {
         }
     }
 
-    #[allow(dead_code)]
-    fn foo() {
-        require_net_behaviour::<Foo>();
-    }
+    require_event::<Foo, MyEvent>();
 }
 
 #[test]
@@ -490,10 +486,7 @@ fn custom_event_with_either() {
         ping_or_identify: Either<ping::Behaviour, identify::Behaviour>,
     }
 
-    #[allow(dead_code)]
-    fn foo() {
-        require_net_behaviour::<Foo>();
-    }
+    require_event::<Foo, BehaviourOutEvent>();
 }
 
 #[test]
