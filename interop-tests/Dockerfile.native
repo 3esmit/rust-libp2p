@@ -1,5 +1,6 @@
 # syntax=docker/dockerfile:1.5-labs
 FROM lukemathwalker/cargo-chef:0.1.68-rust-bullseye as chef
+RUN rustup toolchain install 1.85.0 --profile minimal && rustup default 1.85.0
 WORKDIR /app
 
 FROM chef AS planner
