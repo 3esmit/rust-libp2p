@@ -74,13 +74,11 @@ fn is_tcp_addr(addr: &Multiaddr) -> bool {
 
     let mut iter = addr.iter();
 
-    let first = match iter.next() {
-        None => return false,
-        Some(p) => p,
+    let Some(first) = iter.next() else {
+        return false;
     };
-    let second = match iter.next() {
-        None => return false,
-        Some(p) => p,
+    let Some(second) = iter.next() else {
+        return false;
     };
 
     matches!(first, Ip4(_) | Ip6(_) | Dns(_) | Dns4(_) | Dns6(_)) && matches!(second, Tcp(_))
@@ -514,9 +512,8 @@ impl NetworkBehaviour for Behaviour {
         _addresses: &[Multiaddr],
         _effective_role: Endpoint,
     ) -> Result<Vec<Multiaddr>, ConnectionDenied> {
-        let peer = match maybe_peer {
-            None => return Ok(vec![]),
-            Some(peer) => peer,
+        let Some(peer) = maybe_peer else {
+            return Ok(vec![]);
         };
 
         Ok(self.discovered_peers.get(&peer))

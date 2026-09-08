@@ -324,9 +324,8 @@ impl NetworkBehaviour for Behaviour {
         _addresses: &[Multiaddr],
         _effective_role: Endpoint,
     ) -> Result<Vec<Multiaddr>, ConnectionDenied> {
-        let peer = match maybe_peer {
-            None => return Ok(vec![]),
-            Some(peer) => peer,
+        let Some(peer) = maybe_peer else {
+            return Ok(vec![]);
         };
 
         let addresses = self

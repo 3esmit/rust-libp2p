@@ -308,9 +308,20 @@ jobs:
       RUSTFLAGS: ''
     steps:
       - uses: actions/checkout@v4
-      - run: wget -q -O- https://github.com/obi1kenobi/cargo-semver-checks/releases/download/v0.36.0/cargo-semver-checks-x86_64-unknown-linux-gnu.tar.gz | tar -xz -C ~/.cargo/bin
+      - name: Install pinned semver checker
+        run: |
+          curl --fail --location --retry 3 \
+            https://github.com/obi1kenobi/cargo-semver-checks/releases/download/v0.50.0/cargo-semver-checks-x86_64-unknown-linux-gnu.tar.gz \
+            --output "$RUNNER_TEMP/cargo-semver-checks.tar.gz"
+          echo "52a65dc88dc53fa8b57d6087954eb52cda149ca03bcfca78ce3fdecd23f893c4  $RUNNER_TEMP/cargo-semver-checks.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/cargo-semver-checks.tar.gz" -C "$HOME/.cargo/bin"
+          cargo-semver-checks --version
         shell: bash
       - uses: obi1kenobi/cargo-semver-checks-action@7272cc2caa468d3e009a2b0a9cc366839348237b # v2.6
+        with:
+          rust-toolchain: 1.98.1
+          # This release-backport lane must preserve API compatibility, including prereleases.
+          release-type: patch
 
   rustfmt:
     runs-on: ubuntu-latest
