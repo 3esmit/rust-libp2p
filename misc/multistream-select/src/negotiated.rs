@@ -368,7 +368,7 @@ impl From<NegotiationError> for io::Error {
         if let NegotiationError::ProtocolError(e) = err {
             return e.into();
         }
-        io::Error::new(io::ErrorKind::Other, err)
+        io::Error::other(err)
     }
 }
 
@@ -389,5 +389,33 @@ impl fmt::Display for NegotiationError {
             }
             NegotiationError::Failed => fmt.write_str("Protocol negotiation failed."),
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn failed_negotiation_preserves_error_payload() {
+        let error = io::Error::from(NegotiationError::Failed);
+
+        assert_eq!(error.kind(), io::ErrorKind::Other);
+        assert_eq!(error.to_string(), "Protocol negotiation failed.");
+        assert!(matches!(
+            error
+                .get_ref()
+                .and_then(|inner| inner.downcast_ref::<NegotiationError>()),
+            Some(NegotiationError::Failed)
+        ));
+    }
+
+    #[test]
+    fn protocol_io_error_preserves_kind_and_payload() {
+        let original = io::Error::new(io::ErrorKind::ConnectionReset, "peer reset");
+        let error = io::Error::from(NegotiationError::from(original));
+
+        assert_eq!(error.kind(), io::ErrorKind::ConnectionReset);
+        assert_eq!(error.to_string(), "peer reset");
     }
 }

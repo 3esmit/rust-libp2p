@@ -129,6 +129,8 @@ enum InboundSubstreamState {
 }
 
 impl InboundSubstreamState {
+    // Return the unconsumed response so the next substream can try it without an allocation.
+    #[allow(clippy::result_large_err)]
     fn try_answer_with(
         &mut self,
         id: RequestId,
@@ -820,14 +822,11 @@ fn compute_new_protocol_status(
     now_supported: bool,
     current_status: Option<ProtocolStatus>,
 ) -> ProtocolStatus {
-    let current_status = match current_status {
-        None => {
-            return ProtocolStatus {
-                supported: now_supported,
-                reported: false,
-            }
-        }
-        Some(current) => current,
+    let Some(current_status) = current_status else {
+        return ProtocolStatus {
+            supported: now_supported,
+            reported: false,
+        };
     };
 
     if now_supported == current_status.supported {
@@ -1060,6 +1059,37 @@ mod tests {
     use tracing_subscriber::EnvFilter;
 
     use super::*;
+
+    #[test]
+    fn unmatched_substream_returns_response_without_copying_record() {
+        let mut state = InboundSubstreamState::Cancelled;
+        let record = Record::new(vec![1], vec![2, 3]);
+        let value_ptr = record.value.as_ptr();
+        let response = KadResponseMsg::GetValue {
+            record: Some(record),
+            closer_peers: Vec::new(),
+        };
+
+        let result = state.try_answer_with(
+            RequestId {
+                connec_unique_id: UniqueConnecId(0),
+            },
+            response,
+        );
+
+        assert!(matches!(state, InboundSubstreamState::Cancelled));
+        match result {
+            Err(KadResponseMsg::GetValue {
+                record: Some(record),
+                closer_peers,
+            }) => {
+                assert_eq!(record.value, vec![2, 3]);
+                assert_eq!(record.value.as_ptr(), value_ptr);
+                assert!(closer_peers.is_empty());
+            }
+            _ => panic!("expected the unconsumed response"),
+        }
+    }
 
     impl Arbitrary for ProtocolStatus {
         fn arbitrary(g: &mut Gen) -> Self {

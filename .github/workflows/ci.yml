@@ -70,7 +70,7 @@ jobs:
       - name: Enforce version in `workspace.dependencies` matches the latest version
         if: env.CRATE != 'libp2p'
         run: |
-          SPECIFIED_VERSION=$(tq "workspace.dependencies.$CRATE.version" --file ./Cargo.toml)
+          SPECIFIED_VERSION=$(tq "workspace.dependencies.$CRATE.version" --file ./Cargo.toml | jq -er 'strings')
 
           echo "Package version: $CRATE_VERSION";
           echo "Specified version: $SPECIFIED_VERSION";
@@ -225,7 +225,7 @@ jobs:
       fail-fast: false
       matrix:
         rust-version: [
-          1.83.0, # current stable
+          1.85.0, # minimum supported Rust version
           beta,
         ]
     steps:
@@ -278,6 +278,14 @@ jobs:
           shared-key: stable-cache
           save-if: false
 
+      - name: Check isolated builder feature sets
+        run: |
+          for features in "" relay tcp websocket tokio async-std \
+            tokio,tcp async-std,tcp tokio,tcp,dns,websocket \
+            async-std,tcp,dns,websocket tokio,quic; do
+            cargo check --locked -p libp2p --no-default-features --features "$features"
+          done
+
       - name: Compile all examples
         run: |
           set -e;
@@ -308,17 +316,29 @@ jobs:
       RUSTFLAGS: ''
     steps:
       - uses: actions/checkout@v4
-      - run: wget -q -O- https://github.com/obi1kenobi/cargo-semver-checks/releases/download/v0.36.0/cargo-semver-checks-x86_64-unknown-linux-gnu.tar.gz | tar -xz -C ~/.cargo/bin
+      - name: Install pinned semver checker
+        run: |
+          curl --fail --location --retry 3 \
+            https://github.com/obi1kenobi/cargo-semver-checks/releases/download/v0.50.0/cargo-semver-checks-x86_64-unknown-linux-gnu.tar.gz \
+            --output "$RUNNER_TEMP/cargo-semver-checks.tar.gz"
+          echo "52a65dc88dc53fa8b57d6087954eb52cda149ca03bcfca78ce3fdecd23f893c4  $RUNNER_TEMP/cargo-semver-checks.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/cargo-semver-checks.tar.gz" -C "$HOME/.cargo/bin"
+          cargo-semver-checks --version
         shell: bash
       - uses: obi1kenobi/cargo-semver-checks-action@7272cc2caa468d3e009a2b0a9cc366839348237b # v2.6
+        with:
+          rust-toolchain: 1.98.1
+          # This release-backport lane must preserve API compatibility, including prereleases.
+          release-type: patch
 
   rustfmt:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@master
         with:
+          toolchain: nightly-2026-04-14
           components: rustfmt
 
       - uses: r7kamura/rust-problem-matchers@9fe7ca9f6550e5d6358e179d451cc25ea6b54f98 #v1.5.0

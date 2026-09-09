@@ -287,6 +287,49 @@ mod tests {
         assert_eq!(cached, expected);
     }
 
+    #[test]
+    fn peer_lookup_refreshes_recency_before_eviction() {
+        let mut cache = PeerAddresses::new(NonZeroUsize::new(2).unwrap());
+        let first = PeerId::random();
+        let second = PeerId::random();
+        let third = PeerId::random();
+        let address: Multiaddr = "/memory/1".parse().unwrap();
+
+        assert!(cache.add(first, address.clone()));
+        assert!(cache.add(second, address.clone()));
+        assert_eq!(cache.get(&first).count(), 1);
+        assert!(cache.add(third, address));
+
+        assert_eq!(cache.get(&second).count(), 0);
+        assert_eq!(cache.get(&first).count(), 1);
+        assert_eq!(cache.get(&third).count(), 1);
+    }
+
+    #[test]
+    fn address_eviction_preserves_touched_entries_and_removal() {
+        let mut cache = PeerAddresses::default();
+        let peer = PeerId::random();
+        let addresses: Vec<Multiaddr> = (1..=11)
+            .map(|index| format!("/memory/{index}").parse().unwrap())
+            .collect();
+        for address in &addresses[..10] {
+            assert!(cache.add(peer, address.clone()));
+        }
+        assert!(!cache.add(peer, addresses[0].clone()));
+        assert!(cache.add(peer, addresses[10].clone()));
+
+        let retained: Vec<_> = cache.get(&peer).collect();
+        assert_eq!(retained.len(), 10);
+        assert_eq!(retained[0], addresses[10].clone().with_p2p(peer).unwrap());
+        assert!(retained.contains(&addresses[0].clone().with_p2p(peer).unwrap()));
+        assert!(!retained.contains(&addresses[1].clone().with_p2p(peer).unwrap()));
+
+        assert!(cache.remove(&peer, &addresses[0]));
+        assert!(!cache.remove(&peer, &addresses[0]));
+        assert!(cache.add(peer, addresses[0].clone()));
+        assert_eq!(cache.get(&peer).count(), 10);
+    }
+
     fn prepare_expected_addrs(
         peer_id: PeerId,
         addrs: impl Iterator<Item = Multiaddr>,
@@ -318,10 +361,7 @@ mod tests {
             .map(|addr| {
                 (
                     addr.clone(),
-                    TransportError::Other(io::Error::new(
-                        io::ErrorKind::Other,
-                        MemoryTransportError::Unreachable,
-                    )),
+                    TransportError::Other(io::Error::other(MemoryTransportError::Unreachable)),
                 )
             })
             .collect();

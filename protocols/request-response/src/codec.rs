@@ -27,6 +27,8 @@ use futures::prelude::*;
 /// for a request-response [`Behaviour`](crate::Behaviour) protocol or
 /// protocol family and how they are encoded / decoded on an I/O stream.
 #[async_trait]
+// async-trait adds #[must_use] to methods returning already-must-use boxed futures.
+#[allow(clippy::double_must_use)]
 pub trait Codec {
     /// The type of protocol(s) or protocol versions being negotiated.
     type Protocol: AsRef<str> + Send + Clone;

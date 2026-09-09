@@ -154,9 +154,7 @@ impl Handler {
             <Self as ConnectionHandler>::InboundProtocol,
         >,
     ) {
-        // TODO: remove when Rust 1.82 is MSRV
-        #[allow(unreachable_patterns)]
-        libp2p_core::util::unreachable(error.into_inner());
+        match error {}
     }
 
     fn on_dial_upgrade_error(
