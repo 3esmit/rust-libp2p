@@ -1,7 +1,23 @@
 use std::marker::PhantomData;
 
 mod phase;
+#[cfg(any(
+    feature = "relay",
+    all(
+        not(target_arch = "wasm32"),
+        any(feature = "tokio", feature = "async-std"),
+        any(feature = "tcp", feature = "websocket"),
+    ),
+))]
 mod select_muxer;
+#[cfg(any(
+    feature = "relay",
+    all(
+        not(target_arch = "wasm32"),
+        any(feature = "tokio", feature = "async-std"),
+        any(feature = "tcp", feature = "websocket"),
+    ),
+))]
 mod select_security;
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "websocket"))]

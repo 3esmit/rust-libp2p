@@ -278,6 +278,14 @@ jobs:
           shared-key: stable-cache
           save-if: false
 
+      - name: Check isolated builder feature sets
+        run: |
+          for features in "" relay tcp websocket tokio async-std \
+            tokio,tcp async-std,tcp tokio,tcp,dns,websocket \
+            async-std,tcp,dns,websocket tokio,quic; do
+            cargo check --locked -p libp2p --no-default-features --features "$features"
+          done
+
       - name: Compile all examples
         run: |
           set -e;

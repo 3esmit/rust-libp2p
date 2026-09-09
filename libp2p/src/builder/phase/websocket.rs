@@ -223,6 +223,8 @@ pub struct WebsocketError<Sec>(#[from] WebsocketErrorInner<Sec>);
 #[derive(Debug, thiserror::Error)]
 #[cfg(all(not(target_arch = "wasm32"), feature = "websocket"))]
 enum WebsocketErrorInner<Sec> {
+    // Keep the public error type available even without a runtime that can construct it.
+    #[cfg_attr(not(any(feature = "tokio", feature = "async-std")), allow(dead_code))]
     #[error("SecurityUpgrade")]
     SecurityUpgrade(Sec),
     #[cfg(feature = "dns")]
