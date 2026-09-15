@@ -1,5 +1,7 @@
 ## 0.11.1
 
+- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+
 - Update `libp2p-tls` to version `0.5.0`, see [PR 5547]
 
 - Update `rustls` to `0.23.45` to include the TLS 1.3 handshake boundary fix.

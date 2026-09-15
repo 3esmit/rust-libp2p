@@ -1,5 +1,7 @@
 ## 0.8.0-alpha
 
+- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+
 - Implement refactored `Transport`.
   See [PR 4568](https://github.com/libp2p/rust-libp2p/pull/4568)
 

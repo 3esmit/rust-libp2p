@@ -1,5 +1,7 @@
 ## 0.46.1
 
+- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+
 - Emit `ToSwarm::NewExternalAddrOfPeer` on discovery.
   See [PR 5753](https://github.com/libp2p/rust-libp2p/pull/5753)
 - Upgrade `hickory-proto`.

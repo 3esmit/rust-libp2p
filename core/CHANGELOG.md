@@ -1,5 +1,7 @@
 ## 0.43.0
 
+- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+
 - Added `libp2p::core::util::unreachable` that is a drop-in replacement of `void::unreachable`.
   See [PR 5676](https://github.com/libp2p/rust-libp2p/pull/5676).
 

@@ -1,5 +1,7 @@
 ## 0.15.1
 
+- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+
 - Update to `libp2p-request-response` `v0.28.0`.
 
 ## 0.15.0
