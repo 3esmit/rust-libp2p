@@ -17,20 +17,27 @@ name = "autonatv2_server"
 [dependencies]
 libp2p = { workspace = true, features = ["macros", "tokio", "tcp", "noise", "yamux", "autonat", "identify", "dns", "quic"] }
 clap = { version = "4.4.18", features = ["derive"] }
-tokio = { version = "1.35.1", features = ["macros", "rt-multi-thread"] }
+tokio = { version = "1.44.2", features = ["macros", "rt-multi-thread", "signal"] }
 tracing = "0.1.40"
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
-rand = "0.8.5"
-opentelemetry_sdk = { version = "0.21.1", optional = true, features = ["rt-tokio"] }
-tracing-opentelemetry = { version = "0.22.0", optional = true }
-opentelemetry-jaeger = { version = "0.20.0", optional = true, features = ["rt-tokio"] }
+rand = "0.8.6"
+opentelemetry = { version = "0.32.0", optional = true, default-features = false, features = ["trace"] }
+opentelemetry_sdk = { version = "0.32.1", optional = true, default-features = false, features = ["trace"] }
+tracing-opentelemetry = { version = "0.33.0", optional = true, default-features = false }
+opentelemetry-otlp = { version = "0.32.0", optional = true, default-features = false, features = ["trace", "http-proto", "reqwest-blocking-client"] }
 cfg-if = "1.0.0"
 
 [features]
-jaeger = ["opentelemetry_sdk", "tracing-opentelemetry", "opentelemetry-jaeger"]
+jaeger = ["dep:opentelemetry", "opentelemetry_sdk", "tracing-opentelemetry", "dep:opentelemetry-otlp"]
 opentelemetry_sdk = ["dep:opentelemetry_sdk"]
 tracing-opentelemetry = ["dep:tracing-opentelemetry"]
-opentelemetry-jaeger = ["dep:opentelemetry-jaeger"]
+# Retain the old feature spelling as an alias; export now uses OTLP/HTTP.
+opentelemetry-jaeger = ["jaeger"]
+
+[dev-dependencies]
+axum = "0.7"
+opentelemetry-proto = { version = "0.32.0", default-features = false, features = ["gen-tonic-messages", "trace"] }
+prost = "0.14.4"
 
 [lints]
 workspace = true

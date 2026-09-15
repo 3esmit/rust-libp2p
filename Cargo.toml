@@ -152,6 +152,12 @@ hickory-resolver = { git = "https://github.com/3esmit/hickory-dns.git", rev = "c
 # Retain the RFC 2822 recursion repair with Rust 1.85 support.
 # Downstream workspace roots must repeat this override.
 time = { git = "https://github.com/3esmit/time", rev = "c7f6feeaacf8d23f75b0d136a74ae96c041adb50", version = "=0.3.47" }
+# Preserve batch shutdown failures and prevent reentrant subscriber-drop deadlocks.
+# Patch the API and SDK together to keep their shared types identical.
+# Downstream workspace roots must repeat these overrides.
+opentelemetry = { git = "https://github.com/3esmit/opentelemetry-rust", rev = "e036c2571e20a39ea98219fc63a3d35d322b9da7", version = "=0.32.0" }
+opentelemetry_sdk = { git = "https://github.com/3esmit/opentelemetry-rust", rev = "e036c2571e20a39ea98219fc63a3d35d322b9da7", version = "=0.32.1" }
+tracing-core = { git = "https://github.com/3esmit/tracing", rev = "5ed615b90dd8925f7a552f92b572829078f279d8", version = "=0.1.36" }
 
 # Patch away `libp2p-identity` in our dependency tree with the workspace version.
 # `libp2p-identity` is a leaf dependency and used within `rust-multiaddr` which is **not** part of the workspace.
