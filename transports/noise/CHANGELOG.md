@@ -1,6 +1,6 @@
 ## 0.45.1
 
-- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+- Raise the minimum supported `rand` 0.8 version to `0.8.6` to address RUSTSEC-2026-0097.
 
 - Fix `cargo clippy` warnings in `rustc 1.84.0-beta.1`.
   See [PR 5700](https://github.com/libp2p/rust-libp2p/pull/5700).

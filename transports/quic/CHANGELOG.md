@@ -1,6 +1,6 @@
 ## 0.11.1
 
-- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+- Raise the minimum supported `rand` 0.8 version to `0.8.6` to address RUSTSEC-2026-0097.
 
 - Update `libp2p-tls` to version `0.5.0`, see [PR 5547]
 

@@ -1,6 +1,6 @@
 ## 0.14.0
 
-- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+- Raise the minimum supported `rand` 0.8 version to `0.8.6` to address RUSTSEC-2026-0097.
 
 - Verify that an incoming AutoNAT dial comes from a connected peer. See [PR 5597](https://github.com/libp2p/rust-libp2p/pull/5597).
 - Deprecate `void` crate.

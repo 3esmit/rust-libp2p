@@ -1,6 +1,6 @@
 ## 0.48.0
 
-- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
+- Raise the minimum supported `rand` 0.8 version to `0.8.6` to address RUSTSEC-2026-0097.
 
 - Allow broadcasting `IDONTWANT` messages when publishing to avoid downloading data that is already available.
   See [PR 5773](https://github.com/libp2p/rust-libp2p/pull/5773)
