@@ -125,4 +125,6 @@ allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 allow-git = [
     "https://github.com/3esmit/hickory-dns",
     "https://github.com/3esmit/parity-common",
+    "https://github.com/3esmit/time",
 ]
+required-git-spec = "rev"
