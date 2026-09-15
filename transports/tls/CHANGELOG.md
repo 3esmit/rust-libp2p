@@ -2,6 +2,8 @@
 
 <!-- Update to libp2p-swarm v0.45.0 -->
 
+- Update `rustls` to `0.23.45` to include the TLS 1.3 handshake boundary fix.
+
 ## 0.4.1
 
 - Fix a panic caused by `rustls` parsing the libp2p TLS extension.

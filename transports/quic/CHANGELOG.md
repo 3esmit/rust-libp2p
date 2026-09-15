@@ -2,6 +2,8 @@
 
 - Update `libp2p-tls` to version `0.5.0`, see [PR 5547]
 
+- Update `rustls` to `0.23.45` to include the TLS 1.3 handshake boundary fix.
+
 [PR 5547]: https://github.com/libp2p/rust-libp2p/pull/5547
 
 ## 0.11.0
