@@ -144,6 +144,11 @@ hashlink = "0.9.0"
 
 [patch.crates-io]
 
+# Consume the reviewed alpha.4 DNS hardening backports until an upstream
+# Hickory release contains them.
+hickory-proto = { git = "https://github.com/3esmit/hickory-dns.git", rev = "c30a15c3662db7fa1a2dbb3eb86b8bc4ed51adde" }
+hickory-resolver = { git = "https://github.com/3esmit/hickory-dns.git", rev = "c30a15c3662db7fa1a2dbb3eb86b8bc4ed51adde" }
+
 # Patch away `libp2p-identity` in our dependency tree with the workspace version.
 # `libp2p-identity` is a leaf dependency and used within `rust-multiaddr` which is **not** part of the workspace.
 # As a result, we cannot just reference the workspace version in our crates because the types would mismatch with what
