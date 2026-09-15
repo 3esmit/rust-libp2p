@@ -1966,7 +1966,7 @@ checksum = "b07f60793ff0a4d9cef0f18e63b5357e06209987153a64648c972c1e5aff336f"
 [[package]]
 name = "hickory-proto"
 version = "0.25.0-alpha.4"
-source = "git+https://github.com/3esmit/hickory-dns.git?rev=c30a15c3662db7fa1a2dbb3eb86b8bc4ed51adde#c30a15c3662db7fa1a2dbb3eb86b8bc4ed51adde"
+source = "git+https://github.com/3esmit/hickory-dns.git?rev=ca011fc02a3ed6ea27d3d252ed1324ee512870c7#ca011fc02a3ed6ea27d3d252ed1324ee512870c7"
 dependencies = [
  "async-recursion",
  "async-trait",
@@ -1991,7 +1991,7 @@ dependencies = [
 [[package]]
 name = "hickory-resolver"
 version = "0.25.0-alpha.4"
-source = "git+https://github.com/3esmit/hickory-dns.git?rev=c30a15c3662db7fa1a2dbb3eb86b8bc4ed51adde#c30a15c3662db7fa1a2dbb3eb86b8bc4ed51adde"
+source = "git+https://github.com/3esmit/hickory-dns.git?rev=ca011fc02a3ed6ea27d3d252ed1324ee512870c7#ca011fc02a3ed6ea27d3d252ed1324ee512870c7"
 dependencies = [
  "cfg-if",
  "futures-util",
