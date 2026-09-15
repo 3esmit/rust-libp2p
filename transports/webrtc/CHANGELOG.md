@@ -1,5 +1,7 @@
 ## 0.8.0-alpha
 
+- Update the native WebRTC backend to the Rustls 0.23-compatible WebRTC dependency stack.
+
 - Implement refactored `Transport`.
   See [PR 4568](https://github.com/libp2p/rust-libp2p/pull/4568)
 

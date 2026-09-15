@@ -3,6 +3,7 @@
 <!-- Update to libp2p-swarm v0.45.0 -->
 
 - Update `rustls` to `0.23.45` to include the TLS 1.3 handshake boundary fix.
+- Update the direct `rustls-webpki` dependency to `0.103.15`.
 
 ## 0.4.1
 
