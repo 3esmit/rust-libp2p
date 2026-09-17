@@ -1,5 +1,8 @@
 ## 0.8.0-alpha
 
+- Update the native WebRTC backend to the Rustls 0.23-compatible WebRTC dependency stack.
+- Limit native ICE gathering to the first local candidate for reliable direct connections.
+
 - Implement refactored `Transport`.
   See [PR 4568](https://github.com/libp2p/rust-libp2p/pull/4568)
 
