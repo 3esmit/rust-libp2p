@@ -37,6 +37,8 @@ use webrtc::{
 use crate::tokio::{error::Error, sdp, sdp::random_ufrag, stream::Stream, Connection};
 
 /// Creates a new outbound WebRTC connection.
+// Keep the public Error payloads unboxed throughout the upgrade path.
+#[allow(clippy::result_large_err)]
 pub(crate) async fn outbound(
     addr: SocketAddr,
     config: RTCConfiguration,
@@ -70,6 +72,7 @@ pub(crate) async fn outbound(
 }
 
 /// Creates a new inbound WebRTC connection.
+#[allow(clippy::result_large_err)]
 pub(crate) async fn inbound(
     addr: SocketAddr,
     config: RTCConfiguration,
@@ -103,6 +106,7 @@ pub(crate) async fn inbound(
     Ok((peer_id, Connection::new(peer_connection).await))
 }
 
+#[allow(clippy::result_large_err)]
 async fn new_outbound_connection(
     addr: SocketAddr,
     config: RTCConfiguration,
@@ -120,6 +124,7 @@ async fn new_outbound_connection(
     Ok((connection, ufrag))
 }
 
+#[allow(clippy::result_large_err)]
 async fn new_inbound_connection(
     addr: SocketAddr,
     config: RTCConfiguration,
@@ -182,6 +187,7 @@ async fn get_remote_fingerprint(conn: &RTCPeerConnection) -> Fingerprint {
     Fingerprint::from_certificate(&cert_bytes)
 }
 
+#[allow(clippy::result_large_err)]
 async fn create_substream_for_noise_handshake(conn: &RTCPeerConnection) -> Result<Stream, Error> {
     // NOTE: the data channel w/ `negotiated` flag set to `true` MUST be created on both ends.
     let data_channel = conn

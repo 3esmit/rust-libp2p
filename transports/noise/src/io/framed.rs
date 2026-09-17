@@ -86,8 +86,7 @@ impl Codec<snow::HandshakeState> {
     /// `XX` pattern, which is the only handshake protocol libp2p currently supports.
     pub(crate) fn into_transport(self) -> Result<(PublicKey, Codec<snow::TransportState>), Error> {
         let dh_remote_pubkey = self.session.get_remote_static().ok_or_else(|| {
-            Error::Io(io::Error::new(
-                io::ErrorKind::Other,
+            Error::Io(io::Error::other(
                 "expect key to always be present at end of XX session",
             ))
         })?;
@@ -127,11 +126,11 @@ impl Decoder for Codec<snow::HandshakeState> {
     type Item = proto::NoiseHandshakePayload;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
-        let cleartext = match decrypt(src, |ciphertext, decrypt_buffer| {
+        let Some(cleartext) = decrypt(src, |ciphertext, decrypt_buffer| {
             self.session.read_message(ciphertext, decrypt_buffer)
-        })? {
-            None => return Ok(None),
-            Some(cleartext) => cleartext,
+        })?
+        else {
+            return Ok(None);
         };
 
         let mut reader = BytesReader::from_bytes(&cleartext[..]);

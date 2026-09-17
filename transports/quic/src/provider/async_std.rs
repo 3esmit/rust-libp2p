@@ -29,10 +29,10 @@ use futures::{future::BoxFuture, FutureExt};
 
 use crate::GenTransport;
 
-/// Transport with [`async-std`] runtime.
+/// Transport with [`async-std`](async_std) runtime.
 pub type Transport = GenTransport<Provider>;
 
-/// Provider for quinn runtime and spawning tasks using [`async-std`].
+/// Provider for quinn runtime and spawning tasks using [`async-std`](async_std).
 pub struct Provider;
 
 impl super::Provider for Provider {

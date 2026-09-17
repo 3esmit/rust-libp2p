@@ -204,7 +204,7 @@ impl Message {
         let mut remaining: &[u8] = &msg;
         loop {
             // A well-formed message must be terminated with a newline.
-            if remaining == [b'\n'] {
+            if remaining == b"\n" {
                 break;
             } else if protocols.len() == MAX_PROTOCOLS {
                 return Err(ProtocolError::TooManyProtocols);
@@ -492,6 +492,22 @@ mod tests {
                 4 => Message::Protocols(Vec::arbitrary(g)),
                 _ => panic!(),
             }
+        }
+    }
+
+    #[test]
+    fn protocol_list_requires_exact_newline_terminator() {
+        assert!(matches!(
+            Message::decode(Bytes::from_static(b"\n")),
+            Ok(Message::Protocols(protocols)) if protocols.is_empty()
+        ));
+        assert!(matches!(
+            Message::decode(Bytes::from_static(b"\x03/a\n\n")),
+            Ok(Message::Protocols(protocols))
+                if protocols == vec![Protocol("/a".to_owned())]
+        ));
+        for malformed in [b"".as_slice(), b"\n\n", b"\x03/a\n", b"\x03/a\n\n\n"] {
+            assert!(Message::decode(Bytes::copy_from_slice(malformed)).is_err());
         }
     }
 

@@ -371,7 +371,7 @@ where
     /// by the pool effective immediately.
     pub(crate) fn disconnect(&mut self, peer: PeerId) {
         if let Some(conns) = self.established.get_mut(&peer) {
-            for (_, conn) in conns.iter_mut() {
+            for conn in conns.values_mut() {
                 conn.start_close();
             }
         }
@@ -391,7 +391,7 @@ where
         peer: &PeerId,
     ) -> impl Iterator<Item = ConnectionId> + '_ {
         match self.established.get(peer) {
-            Some(conns) => either::Either::Left(conns.iter().map(|(id, _)| *id)),
+            Some(conns) => either::Either::Left(conns.keys().copied()),
             None => either::Either::Right(std::iter::empty()),
         }
     }

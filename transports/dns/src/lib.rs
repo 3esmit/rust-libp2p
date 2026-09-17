@@ -584,6 +584,8 @@ fn invalid_data(e: impl Into<Box<dyn std::error::Error + Send + Sync>>) -> io::E
 }
 
 #[async_trait::async_trait]
+// async-trait adds #[must_use] to methods returning already-must-use boxed futures.
+#[allow(clippy::double_must_use)]
 #[doc(hidden)]
 pub trait Resolver {
     async fn lookup_ip(&self, name: String) -> Result<LookupIp, ResolveError>;

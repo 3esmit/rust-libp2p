@@ -10,11 +10,11 @@ use futures_timer::Delay;
 pub(crate) const DEFAULT_AUTOMATIC_THROTTLE: Duration = Duration::from_millis(500);
 
 #[derive(Debug)]
-pub(crate) struct Status {
+pub(crate) struct Status<D = Delay> {
     /// If the user did not disable periodic bootstrap (by providing `None` for
     /// `periodic_interval`) this is the periodic interval and the delay of the current period.
     /// When `Delay` finishes, a bootstrap will be triggered and the `Delay` will be reset.
-    interval_and_delay: Option<(Duration, Delay)>,
+    interval_and_delay: Option<(Duration, D)>,
 
     /// Configured duration to wait before triggering a bootstrap when a new peer
     /// is inserted in the routing table. `None` if automatic bootstrap is disabled.
@@ -23,7 +23,7 @@ pub(crate) struct Status {
     /// in the routing table. When it finishes, it will trigger a bootstrap and will be set to
     /// `None` again. If an other new peer is inserted in the routing table before this timer
     /// finishes, the timer is reset.
-    throttle_timer: Option<ThrottleTimer>,
+    throttle_timer: Option<ThrottleTimer<D>>,
 
     /// Number of bootstrap requests currently in progress. We ensure neither periodic bootstrap
     /// or automatic bootstrap trigger new requests when there is still some running.
@@ -32,13 +32,29 @@ pub(crate) struct Status {
     waker: Option<Waker>,
 }
 
-impl Status {
+// Keep production timers unchanged while allowing unit tests to advance time explicitly.
+pub(crate) trait BootstrapDelay: futures::Future<Output = ()> + Unpin {
+    fn new(duration: Duration) -> Self;
+    fn reset(&mut self, duration: Duration);
+}
+
+impl BootstrapDelay for Delay {
+    fn new(duration: Duration) -> Self {
+        Delay::new(duration)
+    }
+
+    fn reset(&mut self, duration: Duration) {
+        Delay::reset(self, duration);
+    }
+}
+
+impl<D: BootstrapDelay> Status<D> {
     pub(crate) fn new(
         periodic_interval: Option<Duration>,
         automatic_throttle: Option<Duration>,
     ) -> Self {
         Self {
-            interval_and_delay: periodic_interval.map(|interval| (interval, Delay::new(interval))),
+            interval_and_delay: periodic_interval.map(|interval| (interval, D::new(interval))),
             waker: None,
             automatic_throttle,
             throttle_timer: None,
@@ -153,22 +169,22 @@ impl Status {
 /// `Delay::new(Duration::ZERO)` does not always actually resolve
 /// immediately.
 #[derive(Debug)]
-enum ThrottleTimer {
+enum ThrottleTimer<D> {
     Immediate,
-    Delay(Delay),
+    Delay(D),
 }
 
-impl From<Duration> for ThrottleTimer {
+impl<D: BootstrapDelay> From<Duration> for ThrottleTimer<D> {
     fn from(value: Duration) -> Self {
         if value.is_zero() {
             Self::Immediate
         } else {
-            Self::Delay(Delay::new(value))
+            Self::Delay(D::new(value))
         }
     }
 }
 
-impl futures::Future for ThrottleTimer {
+impl<D: BootstrapDelay> futures::Future for ThrottleTimer<D> {
     type Output = ();
 
     fn poll(self: std::pin::Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Self::Output> {
@@ -181,28 +197,107 @@ impl futures::Future for ThrottleTimer {
 
 #[cfg(test)]
 mod tests {
-    use web_time::Instant;
+    use std::{
+        sync::{
+            atomic::{AtomicUsize, Ordering},
+            Arc,
+        },
+        task::Wake,
+    };
 
     use super::*;
 
     const MS_5: Duration = Duration::from_millis(5);
     const MS_100: Duration = Duration::from_millis(100);
 
-    fn do_bootstrap(status: &mut Status) {
+    type TestStatus = Status<ManualDelay>;
+
+    /// Per-instance time avoids both wall-clock deadlines and interference between parallel tests.
+    #[derive(Debug)]
+    struct ManualDelay {
+        remaining: Duration,
+        ready: bool,
+        waker: Option<Waker>,
+    }
+
+    impl BootstrapDelay for ManualDelay {
+        fn new(duration: Duration) -> Self {
+            Self {
+                remaining: duration,
+                // Even a zero-duration Delay need not resolve on its first poll.
+                ready: false,
+                waker: None,
+            }
+        }
+
+        fn reset(&mut self, duration: Duration) {
+            self.remaining = duration;
+            self.ready = false;
+        }
+    }
+
+    impl futures::Future for ManualDelay {
+        type Output = ();
+
+        fn poll(self: std::pin::Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+            let this = self.get_mut();
+            if this.ready {
+                Poll::Ready(())
+            } else {
+                this.waker = Some(cx.waker().clone());
+                Poll::Pending
+            }
+        }
+    }
+
+    impl ManualDelay {
+        fn advance(&mut self, duration: Duration) {
+            self.remaining = self.remaining.saturating_sub(duration);
+            if self.remaining.is_zero() {
+                self.ready = true;
+                if let Some(waker) = self.waker.take() {
+                    waker.wake();
+                }
+            }
+        }
+    }
+
+    impl TestStatus {
+        fn advance(&mut self, duration: Duration) {
+            if let Some((_, delay)) = &mut self.interval_and_delay {
+                delay.advance(duration);
+            }
+            if let Some(ThrottleTimer::Delay(delay)) = &mut self.throttle_timer {
+                delay.advance(duration);
+            }
+        }
+    }
+
+    #[derive(Default)]
+    struct WakeCounter(AtomicUsize);
+
+    impl Wake for WakeCounter {
+        fn wake(self: Arc<Self>) {
+            self.0.fetch_add(1, Ordering::SeqCst);
+        }
+    }
+
+    fn do_bootstrap(status: &mut TestStatus) {
         status.on_started();
         status.on_finish();
     }
 
-    async fn await_and_do_bootstrap(status: &mut Status) {
-        status.next().await;
+    fn ready_and_do_bootstrap(status: &mut TestStatus) {
+        assert!(status.next().now_or_never().is_some());
         do_bootstrap(status);
     }
 
-    #[async_std::test]
-    async fn immediate_automatic_bootstrap_is_triggered_immediately() {
-        let mut status = Status::new(Some(Duration::from_secs(1)), Some(Duration::ZERO));
+    #[test]
+    fn immediate_automatic_bootstrap_is_triggered_immediately() {
+        let mut status = TestStatus::new(Some(Duration::from_secs(1)), Some(Duration::ZERO));
 
-        await_and_do_bootstrap(&mut status).await; // Wait for periodic bootstrap
+        status.advance(Duration::from_secs(1));
+        ready_and_do_bootstrap(&mut status);
 
         assert!(
             status.next().now_or_never().is_none(),
@@ -215,19 +310,17 @@ mod tests {
             "bootstrap to be triggered immediately because we connected to a new peer"
         );
 
-        assert!(
-            async_std::future::timeout(Duration::from_millis(500), status.next())
-                .await
-                .is_ok(),
-            "bootstrap to be triggered in less then the configured delay because we connected to a new peer"
-        );
+        // Readiness persists until the caller starts the bootstrap.
+        ready_and_do_bootstrap(&mut status);
+        assert!(status.next().now_or_never().is_none());
     }
 
-    #[async_std::test]
-    async fn delayed_automatic_bootstrap_is_triggered_before_periodic_bootstrap() {
-        let mut status = Status::new(Some(Duration::from_secs(1)), Some(MS_5));
+    #[test]
+    fn delayed_automatic_bootstrap_is_triggered_before_periodic_bootstrap() {
+        let mut status = TestStatus::new(Some(Duration::from_secs(1)), Some(MS_5));
 
-        await_and_do_bootstrap(&mut status).await; // Wait for periodic bootstrap
+        status.advance(Duration::from_secs(1));
+        ready_and_do_bootstrap(&mut status);
 
         assert!(
             status.next().now_or_never().is_none(),
@@ -240,17 +333,15 @@ mod tests {
             "bootstrap to not be triggered immediately because throttle is 5ms"
         );
 
-        assert!(
-            async_std::future::timeout(MS_5 * 2, status.next())
-                .await
-                .is_ok(),
-            "bootstrap to be triggered in less then the configured periodic delay because we connected to a new peer"
-        );
+        status.advance(MS_5 - Duration::from_nanos(1));
+        assert!(status.next().now_or_never().is_none());
+        status.advance(Duration::from_nanos(1));
+        ready_and_do_bootstrap(&mut status);
     }
 
     #[test]
     fn given_no_periodic_bootstrap_and_immediate_automatic_bootstrap_try_on_next_connection() {
-        let mut status = Status::new(None, Some(Duration::ZERO));
+        let mut status = TestStatus::new(None, Some(Duration::ZERO));
 
         // User manually triggered a bootstrap
         do_bootstrap(&mut status);
@@ -263,59 +354,64 @@ mod tests {
         )
     }
 
-    #[async_std::test]
-    async fn given_periodic_bootstrap_when_routing_table_updated_then_wont_bootstrap_until_next_interval(
-    ) {
-        let mut status = Status::new(Some(MS_100), Some(MS_5));
+    #[test]
+    fn given_periodic_bootstrap_when_routing_table_updated_then_wont_bootstrap_until_next_interval()
+    {
+        let mut status = TestStatus::new(Some(MS_100), Some(MS_5));
 
         status.trigger();
 
-        let start = Instant::now();
-        await_and_do_bootstrap(&mut status).await;
-        let elapsed = Instant::now().duration_since(start);
+        assert!(status.next().now_or_never().is_none());
+        status.advance(MS_5 - Duration::from_nanos(1));
+        assert!(status.next().now_or_never().is_none());
+        status.advance(Duration::from_nanos(1));
+        ready_and_do_bootstrap(&mut status);
 
-        assert!(elapsed < MS_5 * 2);
-
-        let start = Instant::now();
-        await_and_do_bootstrap(&mut status).await;
-        let elapsed = Instant::now().duration_since(start);
-
-        assert!(elapsed > MS_100);
+        // Automatic bootstrap cancels its throttle and restarts the periodic interval.
+        assert!(status.next().now_or_never().is_none());
+        status.advance(MS_100 - MS_5);
+        assert!(
+            status.next().now_or_never().is_none(),
+            "old periodic deadline was reset"
+        );
+        status.advance(MS_5 - Duration::from_nanos(1));
+        assert!(status.next().now_or_never().is_none());
+        status.advance(Duration::from_nanos(1));
+        ready_and_do_bootstrap(&mut status);
     }
 
-    #[async_std::test]
-    async fn given_no_periodic_bootstrap_and_automatic_bootstrap_when_new_entry_then_will_bootstrap(
-    ) {
-        let mut status = Status::new(None, Some(Duration::ZERO));
+    #[test]
+    fn given_no_periodic_bootstrap_and_automatic_bootstrap_when_new_entry_then_will_bootstrap() {
+        let mut status = TestStatus::new(None, Some(Duration::ZERO));
 
         status.trigger();
 
-        status.next().await;
+        ready_and_do_bootstrap(&mut status);
+        status.advance(Duration::from_secs(1));
+        assert!(status.next().now_or_never().is_none());
     }
 
-    #[async_std::test]
-    async fn given_periodic_bootstrap_and_no_automatic_bootstrap_triggers_periodically() {
-        let mut status = Status::new(Some(MS_100), None);
+    #[test]
+    fn given_periodic_bootstrap_and_no_automatic_bootstrap_triggers_periodically() {
+        let mut status = TestStatus::new(Some(MS_100), None);
 
-        let start = Instant::now();
-        for i in 1..6 {
-            await_and_do_bootstrap(&mut status).await;
-
-            let elapsed = Instant::now().duration_since(start);
-
-            // Subtract 10ms to avoid flakes.
-            assert!(elapsed > (i * MS_100 - Duration::from_millis(10)));
+        for _ in 1..6 {
+            status.trigger(); // New peers do not bypass the disabled automatic bootstrap.
+            status.advance(MS_100 - Duration::from_nanos(1));
+            assert!(status.next().now_or_never().is_none());
+            status.advance(Duration::from_nanos(1));
+            ready_and_do_bootstrap(&mut status);
         }
     }
 
-    #[async_std::test]
-    async fn given_no_periodic_bootstrap_and_automatic_bootstrap_reset_throttle_when_multiple_peers(
-    ) {
-        let mut status = Status::new(None, Some(MS_100));
+    #[test]
+    fn given_no_periodic_bootstrap_and_automatic_bootstrap_reset_throttle_when_multiple_peers() {
+        let mut status = TestStatus::new(None, Some(MS_100));
 
         status.trigger();
         for _ in 0..10 {
-            Delay::new(MS_100 / 2).await;
+            status.advance(MS_100 / 2);
+            assert!(status.next().now_or_never().is_none());
             // should reset throttle_timer
             status.trigger();
         }
@@ -324,20 +420,15 @@ mod tests {
             "bootstrap to not be triggered immediately because throttle has been reset"
         );
 
-        Delay::new(MS_100 - MS_5).await;
-
-        assert!(
-            async_std::future::timeout(MS_5*2, status.next())
-                .await
-                .is_ok(),
-            "bootstrap to be triggered in the configured throttle delay because we connected to a new peer"
-        );
+        status.advance(MS_100 - Duration::from_nanos(1));
+        assert!(status.next().now_or_never().is_none());
+        status.advance(Duration::from_nanos(1));
+        ready_and_do_bootstrap(&mut status);
     }
 
-    #[async_std::test]
-    async fn given_periodic_bootstrap_and_no_automatic_bootstrap_manually_triggering_prevent_periodic(
-    ) {
-        let mut status = Status::new(Some(MS_100), None);
+    #[test]
+    fn given_periodic_bootstrap_and_no_automatic_bootstrap_manually_triggering_prevent_periodic() {
+        let mut status = TestStatus::new(Some(MS_100), None);
 
         // first manually triggering
         status.on_started();
@@ -346,10 +437,9 @@ mod tests {
         // one finishes
         status.on_finish();
 
+        status.advance(10 * MS_100);
         assert!(
-            async_std::future::timeout(10 * MS_100, status.next())
-                .await
-                .is_err(),
+            status.next().now_or_never().is_none(),
             "periodic bootstrap to never be triggered because one is still being run"
         );
 
@@ -359,5 +449,66 @@ mod tests {
             status.next().now_or_never().is_some(),
             "bootstrap to be triggered immediately because no more bootstrap requests are running"
         )
+    }
+
+    #[test]
+    fn periodic_bootstrap_is_not_postponed_by_new_peers() {
+        let mut status = TestStatus::new(Some(MS_100), Some(MS_100));
+        status.advance(MS_100 - MS_5);
+        status.trigger();
+        assert!(status.next().now_or_never().is_none());
+        status.advance(MS_5);
+        ready_and_do_bootstrap(&mut status);
+        status.advance(MS_100 - MS_5);
+        assert!(
+            status.next().now_or_never().is_none(),
+            "periodic bootstrap canceled the throttle"
+        );
+    }
+
+    #[test]
+    fn manual_bootstrap_cancels_automatic_bootstrap() {
+        let mut status = TestStatus::new(None, Some(MS_100));
+        status.trigger();
+        status.advance(MS_5);
+        do_bootstrap(&mut status);
+        status.advance(MS_100);
+        assert!(status.next().now_or_never().is_none());
+    }
+
+    #[test]
+    fn trigger_and_timer_wake_pending_bootstrap() {
+        let counter = Arc::new(WakeCounter::default());
+        let waker = Waker::from(counter.clone());
+        let mut cx = Context::from_waker(&waker);
+        let mut status = TestStatus::new(None, Some(MS_5));
+
+        assert!(status.poll_next_bootstrap(&mut cx).is_pending());
+        status.trigger();
+        assert_eq!(counter.0.load(Ordering::SeqCst), 1);
+        assert!(status.poll_next_bootstrap(&mut cx).is_pending());
+        status.advance(MS_5);
+        assert_eq!(counter.0.load(Ordering::SeqCst), 2);
+        assert!(status.poll_next_bootstrap(&mut cx).is_ready());
+    }
+
+    #[test]
+    fn finishing_requests_wakes_bootstrap_but_waits_for_last_request() {
+        let counter = Arc::new(WakeCounter::default());
+        let waker = Waker::from(counter.clone());
+        let mut cx = Context::from_waker(&waker);
+        let mut status = TestStatus::new(None, Some(MS_5));
+        status.on_started();
+        status.on_started();
+        status.trigger();
+        status.advance(MS_5);
+
+        assert!(status.poll_next_bootstrap(&mut cx).is_pending());
+        status.on_finish();
+        assert_eq!(counter.0.load(Ordering::SeqCst), 1);
+        assert!(status.poll_next_bootstrap(&mut cx).is_pending());
+        status.on_finish();
+        assert_eq!(counter.0.load(Ordering::SeqCst), 2);
+        assert!(status.poll_next_bootstrap(&mut cx).is_ready());
     }
 }

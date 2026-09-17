@@ -20,8 +20,15 @@
 
 pub(crate) mod proto {
     #![allow(unreachable_pub)]
-    include!("generated/mod.rs");
+    pub mod gossipsub {
+        include!("generated/gossipsub/mod.rs");
+    }
     pub use self::gossipsub::pb::{mod_RPC::SubOpts, *};
+
+    #[cfg(test)]
+    pub mod compat {
+        include!("generated/compat/mod.rs");
+    }
 }
 
 #[cfg(test)]

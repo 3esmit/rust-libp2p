@@ -35,6 +35,8 @@ use libp2p_swarm::{
 /// An extension trait for [`Swarm`] that makes it
 /// easier to set up a network of [`Swarm`]s for tests.
 #[async_trait]
+// async-trait adds #[must_use] to methods returning already-must-use boxed futures.
+#[allow(clippy::double_must_use)]
 pub trait SwarmExt {
     type NB: NetworkBehaviour;
 

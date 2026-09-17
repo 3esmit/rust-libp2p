@@ -2681,13 +2681,9 @@ fn test_do_not_gossip_to_peers_below_gossip_threshold() {
         RpcOut::IHave(IHave {
             topic_hash,
             message_ids,
-        }) => {
-            if topic_hash == &topics[0] && message_ids.iter().any(|id| id == &msg_id) {
-                assert_eq!(peer, &p2);
-                true
-            } else {
-                false
-            }
+        }) if topic_hash == &topics[0] && message_ids.iter().any(|id| id == &msg_id) => {
+            assert_eq!(peer, &p2);
+            true
         }
         _ => false,
     });
@@ -2844,13 +2840,9 @@ fn test_ihave_msg_from_peer_below_gossip_threshold_gets_ignored() {
 
     // check that we sent exactly one IWANT request to p2
     let (control_msgs, _) = count_control_msgs(receivers, |peer, c| match c {
-        RpcOut::IWant(IWant { message_ids }) => {
-            if message_ids.iter().any(|m| m == &msg_id) {
-                assert_eq!(peer, &p2);
-                true
-            } else {
-                false
-            }
+        RpcOut::IWant(IWant { message_ids }) if message_ids.iter().any(|m| m == &msg_id) => {
+            assert_eq!(peer, &p2);
+            true
         }
         _ => false,
     });
@@ -4182,7 +4174,7 @@ fn test_scoring_p6() {
 
     // create 5 peers with the same ip
     let addr = Multiaddr::from(Ipv4Addr::new(10, 1, 2, 3));
-    let peers = vec![
+    let peers = [
         add_peer_with_addr(&mut gs, &[], false, false, addr.clone()).0,
         add_peer_with_addr(&mut gs, &[], false, false, addr.clone()).0,
         add_peer_with_addr(&mut gs, &[], true, false, addr.clone()).0,
@@ -4192,7 +4184,7 @@ fn test_scoring_p6() {
 
     // create 4 other peers with other ip
     let addr2 = Multiaddr::from(Ipv4Addr::new(10, 1, 2, 4));
-    let others = vec![
+    let others = [
         add_peer_with_addr(&mut gs, &[], false, false, addr2.clone()).0,
         add_peer_with_addr(&mut gs, &[], false, false, addr2.clone()).0,
         add_peer_with_addr(&mut gs, &[], true, false, addr2.clone()).0,

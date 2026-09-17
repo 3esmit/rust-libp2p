@@ -1,3 +1,9 @@
+## 0.46.1
+
+- Update the peer-address cache dependency to `lru` 0.18.2, addressing
+  RUSTSEC-2026-0002 and RUSTSEC-2026-0253 without changing swarm protocols.
+- The release backport requires Rust 1.85, matching the updated dependency.
+
 ## 0.46.0
 
 - Don't report `NewExternalAddrCandidate` for confirmed external addresses.

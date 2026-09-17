@@ -68,8 +68,6 @@
 
 mod bucket;
 mod entry;
-#[allow(clippy::ptr_offset_with_cast)]
-#[allow(clippy::assign_op_pattern)]
 mod key;
 
 use std::{collections::VecDeque, num::NonZeroUsize, time::Duration};

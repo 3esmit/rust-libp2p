@@ -110,10 +110,7 @@ fn perform_dial_back(
                 Ok(Ok(())) => {}
                 Ok(Err(e)) => return Some((Err(e), state)),
                 Err(_) => {
-                    return Some((
-                        Err(io::Error::new(io::ErrorKind::Other, "Sender got cancelled")),
-                        state,
-                    ));
+                    return Some((Err(io::Error::other("Sender got cancelled")), state));
                 }
             }
             if let Err(e) = protocol::dial_back_response(&mut state.stream).await {

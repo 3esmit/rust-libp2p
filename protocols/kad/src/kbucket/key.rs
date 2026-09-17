@@ -29,13 +29,21 @@ use sha2::{
     digest::generic_array::{typenum::U32, GenericArray},
     Digest, Sha256,
 };
-use uint::*;
+pub use uint::U256;
 
 use crate::record;
 
-construct_uint! {
-    /// 256-bit unsigned integer.
-    pub struct U256(4);
+// Keep compatibility idioms emitted by the external macro out of handwritten-code linting.
+#[allow(
+    clippy::ptr_offset_with_cast,
+    clippy::assign_op_pattern,
+    clippy::manual_div_ceil
+)]
+mod uint {
+    uint::construct_uint! {
+        /// 256-bit unsigned integer.
+        pub struct U256(4);
+    }
 }
 
 /// A `Key` in the DHT keyspace with preserved preimage.

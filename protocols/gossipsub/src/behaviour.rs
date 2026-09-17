@@ -524,7 +524,7 @@ where
 
     /// Subscribe to a topic.
     ///
-    /// Returns [`Ok(true)`] if the subscription worked. Returns [`Ok(false)`] if we were already
+    /// Returns `Ok(true)` if the subscription worked. Returns `Ok(false)` if we were already
     /// subscribed.
     pub fn subscribe<H: Hasher>(&mut self, topic: &Topic<H>) -> Result<bool, SubscriptionError> {
         tracing::debug!(%topic, "Subscribing to topic");
@@ -1420,8 +1420,6 @@ where
                                 peer_score.add_penalty(peer_id, 1);
 
                                 // check the flood cutoff
-                                // See: https://github.com/rust-lang/rust-clippy/issues/10061
-                                #[allow(unknown_lints, clippy::unchecked_duration_subtraction)]
                                 let flood_cutoff = (backoff_time
                                     + self.config.graft_flood_threshold())
                                     - self.config.prune_backoff();
@@ -3499,14 +3497,12 @@ fn validate_config(
                 return Err("Published messages contain an author but incoming messages with an author will be rejected. Consider adjusting the validation or privacy settings in the config");
             }
         }
-        ValidationMode::Strict => {
-            if !authenticity.is_signing() {
-                return Err(
+        ValidationMode::Strict if !authenticity.is_signing() => {
+            return Err(
                     "Messages will be
                 published unsigned and incoming unsigned messages will be rejected. Consider adjusting
                 the validation or privacy settings in the config"
                 );
-            }
         }
         _ => {}
     }

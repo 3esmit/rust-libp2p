@@ -172,9 +172,7 @@ mod codec {
         match err {
             // TODO: remove when Rust 1.82 is MSRV
             #[allow(unreachable_patterns)]
-            cbor4ii::serde::DecodeError::Core(DecodeError::Read(e)) => {
-                io::Error::new(io::ErrorKind::Other, e)
-            }
+            cbor4ii::serde::DecodeError::Core(DecodeError::Read(e)) => io::Error::other(e),
             cbor4ii::serde::DecodeError::Core(e @ DecodeError::Unsupported { .. }) => {
                 io::Error::new(io::ErrorKind::Unsupported, e)
             }
@@ -182,14 +180,12 @@ mod codec {
                 io::Error::new(io::ErrorKind::UnexpectedEof, e)
             }
             cbor4ii::serde::DecodeError::Core(e) => io::Error::new(io::ErrorKind::InvalidData, e),
-            cbor4ii::serde::DecodeError::Custom(e) => {
-                io::Error::new(io::ErrorKind::Other, e.to_string())
-            }
+            cbor4ii::serde::DecodeError::Custom(e) => io::Error::other(e.to_string()),
         }
     }
 
     fn encode_into_io_error(err: cbor4ii::serde::EncodeError<TryReserveError>) -> io::Error {
-        io::Error::new(io::ErrorKind::Other, err)
+        io::Error::other(err)
     }
 }
 
