@@ -539,8 +539,11 @@ dependencies = [
  "cfg-if",
  "clap",
  "libp2p",
- "opentelemetry-jaeger",
- "opentelemetry_sdk 0.21.2",
+ "opentelemetry 0.32.0",
+ "opentelemetry-otlp 0.32.0",
+ "opentelemetry-proto 0.32.0",
+ "opentelemetry_sdk 0.32.1",
+ "prost 0.14.4",
  "rand 0.8.6",
  "tokio",
  "tracing",
@@ -4243,29 +4246,9 @@ version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f5774f1ef1f982ef2a447f6ee04ec383981a3ab99c8e77a1a7b30182e65bbc84"
 dependencies = [
- "opentelemetry 0.21.0",
-]
-
-[[package]]
-name = "opentelemetry_sdk"
-version = "0.21.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f16aec8a98a457a52664d69e0091bac3a0abd18ead9b641cb00202ba4e0efe4"
-dependencies = [
- "async-trait",
- "crossbeam-channel",
- "futures-channel",
- "futures-executor",
- "futures-util",
- "glob",
- "once_cell",
- "opentelemetry 0.21.0",
- "ordered-float 4.6.0",
- "percent-encoding",
- "rand 0.8.6",
- "thiserror 1.0.69",
- "tokio",
- "tokio-stream",
+ "opentelemetry 0.32.0",
+ "opentelemetry_sdk 0.32.1",
+ "prost 0.14.4",
 ]
 
 [[package]]
