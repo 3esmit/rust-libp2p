@@ -18,7 +18,14 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 // DEALINGS IN THE SOFTWARE.
 
-use std::{net::SocketAddr, sync::Arc, time::Duration};
+use std::{
+    net::{IpAddr, SocketAddr, UdpSocket},
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc,
+    },
+    time::Duration,
+};
 
 use futures::{channel::oneshot, future::Either};
 use futures_timer::Delay;
@@ -177,7 +184,33 @@ fn setting_engine(
     };
     se.set_network_types(vec![network_type]);
 
+    // A wildcard listener can have multiple local candidates. Keep only the candidate selected
+    // by the kernel for this remote address so that container/interface-bound listeners advertise
+    // the address their UDP socket will use. The ICE agent does not report loopback addresses, so
+    // retain its one-candidate fallback when the remote endpoint is loopback.
+    match local_ip_for_remote(addr) {
+        Some(local_ip) if !local_ip.is_loopback() => {
+            se.set_ip_filter(Box::new(move |candidate| candidate == local_ip));
+        }
+        _ => se.set_ip_filter(first_ip_filter()),
+    }
+
     se
+}
+
+fn first_ip_filter() -> Box<dyn Fn(IpAddr) -> bool + Send + Sync> {
+    let once = AtomicBool::new(true);
+    Box::new(move |_| once.swap(false, Ordering::Relaxed))
+}
+
+fn local_ip_for_remote(addr: SocketAddr) -> Option<IpAddr> {
+    let bind_addr = match addr {
+        SocketAddr::V4(_) => SocketAddr::from(([0, 0, 0, 0], 0)),
+        SocketAddr::V6(_) => SocketAddr::from(([0; 8], 0)),
+    };
+    let socket = UdpSocket::bind(bind_addr).ok()?;
+    socket.connect(addr).ok()?;
+    socket.local_addr().ok().map(|local| local.ip())
 }
 
 /// Returns the SHA-256 fingerprint of the remote.
