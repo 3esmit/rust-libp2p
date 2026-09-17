@@ -1,6 +1,6 @@
 ## 0.46.1
 
-- Raise the minimum supported `rand` 0.8 version to `0.8.6` to address RUSTSEC-2026-0097.
+- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
 
 - Update the peer-address cache dependency to `lru` 0.18.2, addressing
   RUSTSEC-2026-0002 and RUSTSEC-2026-0253 without changing swarm protocols.
