@@ -1,3 +1,7 @@
+## Unreleased
+
+- Pin `hickory-proto` and `hickory-resolver` to the release-validation revision containing the reviewed alpha.4 DNS hardening backports.
+
 ## 0.42.1
 
 - Upgrade `async-std-resolver` and `hickory-resolver`.
