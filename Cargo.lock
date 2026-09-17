@@ -2476,6 +2476,7 @@ dependencies = [
  "async-trait",
  "bytes",
  "log",
+ "portable-atomic",
  "rand 0.8.6",
  "rtcp",
  "rtp 0.9.0",
@@ -3437,7 +3438,7 @@ dependencies = [
  "multihash",
  "quickcheck",
  "rand 0.8.6",
- "rcgen",
+ "rcgen 0.13.2",
  "stun 0.7.0",
  "thiserror 2.0.9",
  "tokio",
@@ -5145,23 +5146,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e60482acbe8afb31edf6b1413103b7bca7a65004c423b3c3993749a083994fbe"
 dependencies = [
  "bytes",
+ "portable-atomic",
  "rand 0.8.6",
  "serde",
  "thiserror 1.0.69",
- "webrtc-util 0.8.1",
-]
-
-[[package]]
-name = "rtp"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "47fca9bd66ae0b1f3f649b8f5003d6176433d7293b78b0fce7e1031816bdd99d"
-dependencies = [
- "bytes",
- "rand 0.8.6",
- "serde",
- "thiserror 1.0.69",
- "webrtc-util 0.8.1",
+ "webrtc-util 0.9.0",
 ]
 
 [[package]]
@@ -6524,6 +6513,7 @@ dependencies = [
  "futures",
  "log",
  "md-5",
+ "portable-atomic",
  "rand 0.8.6",
  "ring 0.17.8",
  "stun 0.5.1",
@@ -6868,8 +6858,9 @@ dependencies = [
  "lazy_static",
  "log",
  "pem",
+ "portable-atomic",
  "rand 0.8.6",
- "rcgen",
+ "rcgen 0.13.2",
  "regex",
  "ring 0.16.20",
  "rtcp",
@@ -6931,6 +6922,7 @@ dependencies = [
  "p256",
  "p384",
  "pem",
+ "portable-atomic",
  "rand 0.8.6",
  "rand_core 0.6.4",
  "rcgen",
@@ -6958,6 +6950,7 @@ dependencies = [
  "async-trait",
  "crc",
  "log",
+ "portable-atomic",
  "rand 0.8.6",
  "serde",
  "serde_json",
@@ -6994,7 +6987,7 @@ dependencies = [
  "byteorder",
  "bytes",
  "rand 0.8.6",
- "rtp 0.10.0",
+ "rtp",
  "thiserror 1.0.69",
 ]
 
@@ -7009,6 +7002,7 @@ dependencies = [
  "bytes",
  "crc",
  "log",
+ "portable-atomic",
  "rand 0.8.6",
  "thiserror 1.0.69",
  "tokio",
@@ -7052,6 +7046,7 @@ dependencies = [
  "libc",
  "log",
  "nix",
+ "portable-atomic",
  "rand 0.8.6",
  "thiserror 1.0.69",
  "tokio",
