@@ -69,7 +69,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-rust-version = "1.83.0"
+rust-version = "1.85.0"
 
 [workspace.dependencies]
 libp2p = { version = "0.55.0", path = "libp2p" }
@@ -148,6 +148,10 @@ hashlink = "0.9.0"
 # an upstream Hickory release contains them.
 hickory-proto = { git = "https://github.com/3esmit/hickory-dns.git", rev = "ca011fc02a3ed6ea27d3d252ed1324ee512870c7" }
 hickory-resolver = { git = "https://github.com/3esmit/hickory-dns.git", rev = "ca011fc02a3ed6ea27d3d252ed1324ee512870c7" }
+
+# Retain the RFC 2822 recursion repair with Rust 1.85 support.
+# Downstream workspace roots must repeat this override.
+time = { git = "https://github.com/3esmit/time", rev = "c7f6feeaacf8d23f75b0d136a74ae96c041adb50", version = "=0.3.47" }
 
 # Patch away `libp2p-identity` in our dependency tree with the workspace version.
 # `libp2p-identity` is a leaf dependency and used within `rust-multiaddr` which is **not** part of the workspace.
