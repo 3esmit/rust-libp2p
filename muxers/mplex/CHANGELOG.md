@@ -1,7 +1,5 @@
 ## 0.42.0
 
-- Raise the minimum supported `rand` 0.8 version to `0.8.6`.
-
 <!-- Update to libp2p-swarm v0.45.0 -->
 
 ## 0.41.0
