@@ -34,10 +34,17 @@ use uint::*;
 
 use crate::record;
 
-construct_uint! {
-    /// 256-bit unsigned integer.
-    pub struct U256(4);
+#[allow(deprecated)]
+mod uint_compat {
+    use super::*;
+
+    construct_uint! {
+        /// 256-bit unsigned integer.
+        pub struct U256(4);
+    }
 }
+
+pub use uint_compat::U256;
 
 /// A `Key` in the DHT keyspace with preserved preimage.
 ///
