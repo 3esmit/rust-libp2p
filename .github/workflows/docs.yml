@@ -29,6 +29,9 @@ jobs:
 
   deploy:
     name: Deploy documentation
+    # GitHub Pages is owned by the canonical repository. Forks still build
+    # and upload the documentation artifact, but must not attempt deployment.
+    if: github.repository == 'libp2p/rust-libp2p'
     needs: build
     permissions:
       pages: write
@@ -42,4 +45,3 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v5
-

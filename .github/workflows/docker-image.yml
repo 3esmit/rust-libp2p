@@ -9,6 +9,8 @@ on:
 
 jobs:
   server:
+    # The fork has no permission to publish the canonical GHCR package.
+    if: github.repository == 'libp2p/rust-libp2p'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
