@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1.5-labs
-FROM lukemathwalker/cargo-chef:0.1.68-rust-bullseye as chef
+# Rust 1.84 in the old image cannot parse the workspace's edition 2024
+# manifests. Keep the dependency planner on a current, pinned toolchain.
+FROM lukemathwalker/cargo-chef:0.1.78-rust-bullseye@sha256:0e4ad5967c994250c41f7910f2b846bb50d755ad51fa1641a446bd945f1de85c as chef
 WORKDIR /app
 
 FROM chef AS planner
